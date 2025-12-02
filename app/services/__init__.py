@@ -34,4 +34,9 @@ from .gmail import (
     delete_emails_bulk,
     delete_emails_bulk_background,
     get_delete_bulk_status,
+    
+    # Download
+    download_emails_background,
+    get_download_status,
+    get_download_csv,
 )

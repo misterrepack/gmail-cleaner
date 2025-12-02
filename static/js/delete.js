@@ -349,6 +349,123 @@ GmailCleaner.Delete = {
         if (overlay) {
             overlay.remove();
         }
+    },
+
+    // Download emails functionality
+    async downloadSelected() {
+        const checkboxes = document.querySelectorAll('.delete-cb:checked');
+        if (checkboxes.length === 0) {
+            GmailCleaner.UI.showInfoToast('Please select at least one sender to download emails from.');
+            return;
+        }
+        
+        let totalEmails = 0;
+        const senderEmails = [];
+        checkboxes.forEach(cb => {
+            const index = parseInt(cb.dataset.index);
+            const r = GmailCleaner.deleteResults[index];
+            totalEmails += r.count;
+            senderEmails.push(r.email);
+        });
+        
+        // Show download overlay
+        this.showDownloadOverlay(checkboxes.length, totalEmails);
+        
+        try {
+            // Start background download
+            await fetch('/api/download-emails', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ senders: senderEmails })
+            });
+            
+            // Poll for progress
+            this.pollDownloadProgress();
+        } catch (error) {
+            this.hideDownloadOverlay();
+            GmailCleaner.UI.showErrorToast('Error: ' + error.message);
+        }
+    },
+
+    async pollDownloadProgress() {
+        try {
+            const response = await fetch('/api/download-status');
+            const status = await response.json();
+            
+            this.updateDownloadOverlay(status);
+            
+            if (status.done) {
+                if (!status.error) {
+                    // Trigger CSV download
+                    window.location.href = '/api/download-csv';
+                    setTimeout(() => {
+                        this.hideDownloadOverlay();
+                        GmailCleaner.UI.showSuccessToast(
+                            `Successfully exported ${status.fetched_count.toLocaleString()} emails to CSV file. Check your downloads folder.`,
+                            'Tip: You can open the CSV in Excel or Google Sheets for easy viewing'
+                        );
+                    }, 500);
+                } else {
+                    this.hideDownloadOverlay();
+                    GmailCleaner.UI.showErrorToast('Error: ' + status.error);
+                }
+            } else {
+                setTimeout(() => this.pollDownloadProgress(), 300);
+            }
+        } catch (error) {
+            setTimeout(() => this.pollDownloadProgress(), 500);
+        }
+    },
+
+    showDownloadOverlay(senderCount, emailCount) {
+        this.hideDownloadOverlay();
+        
+        const overlay = document.createElement('div');
+        overlay.id = 'downloadOverlay';
+        overlay.className = 'download-overlay';
+        overlay.innerHTML = `
+            <div class="download-overlay-content">
+                <svg class="download-overlay-spinner spinner" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10" fill="none" stroke="#10b981" stroke-width="2" stroke-dasharray="60" stroke-linecap="round"/>
+                </svg>
+                <h3>Downloading Email Data...</h3>
+                <div class="download-progress-container">
+                    <div class="download-progress-bar" id="downloadProgressBar"></div>
+                </div>
+                <p id="downloadProgressText">Starting download...</p>
+                <p class="download-stats" id="downloadStats">0/${emailCount} emails from ${senderCount} senders</p>
+                <p class="download-note">This may take a moment for large mailboxes</p>
+            </div>
+        `;
+        overlay.dataset.totalEmails = emailCount;
+        document.body.appendChild(overlay);
+    },
+
+    updateDownloadOverlay(status) {
+        const overlay = document.getElementById('downloadOverlay');
+        if (!overlay) return;
+        
+        const progressBar = document.getElementById('downloadProgressBar');
+        const progressText = document.getElementById('downloadProgressText');
+        const stats = document.getElementById('downloadStats');
+        
+        if (progressBar) {
+            progressBar.style.width = status.progress + '%';
+        }
+        if (progressText) {
+            progressText.textContent = status.message;
+        }
+        if (stats) {
+            const totalEmails = overlay.dataset.totalEmails || status.total_emails;
+            stats.textContent = `${status.fetched_count || 0}/${totalEmails} emails fetched`;
+        }
+    },
+
+    hideDownloadOverlay() {
+        const overlay = document.getElementById('downloadOverlay');
+        if (overlay) {
+            overlay.remove();
+        }
     }
 };
 
@@ -356,3 +473,4 @@ GmailCleaner.Delete = {
 function startDeleteScan() { GmailCleaner.Delete.startScan(); }
 function toggleDeleteSelectAll() { GmailCleaner.Delete.toggleSelectAll(); }
 function deleteSelectedSenders() { GmailCleaner.Delete.deleteSelected(); }
+function downloadSelectedEmails() { GmailCleaner.Delete.downloadSelected(); }

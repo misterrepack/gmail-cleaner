@@ -57,8 +57,11 @@ class TestScanEndpoint:
 class TestAuthEndpoints:
     """Tests for auth-related endpoints."""
 
-    def test_sign_in(self, client):
+    @patch("app.api.actions.get_gmail_service")
+    def test_sign_in(self, mock_get_service, client):
         """POST /api/sign-in should trigger sign-in flow."""
+        # Mock to prevent actual OAuth flow and browser opening
+        mock_get_service.return_value = (None, "Not authenticated")
         response = client.post("/api/sign-in")
         assert response.status_code == 200
         data = response.json()

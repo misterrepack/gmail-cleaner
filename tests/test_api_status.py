@@ -4,6 +4,7 @@ Tests for Status API Endpoints
 Tests for GET status endpoints.
 """
 
+from unittest.mock import patch
 
 # client fixture is provided by conftest.py
 
@@ -49,8 +50,11 @@ class TestStatusEndpoints:
         # Check expected web auth fields
         assert "web_auth_mode" in data or "has_credentials" in data
 
-    def test_get_unread_count(self, client):
+    @patch("app.services.gmail.get_gmail_service")
+    def test_get_unread_count(self, mock_get_service, client):
         """GET /api/unread-count should return unread count."""
+        # Mock get_gmail_service to return error (no auth) to prevent browser opening
+        mock_get_service.return_value = (None, "Not authenticated")
         response = client.get("/api/unread-count")
         assert response.status_code == 200
         data = response.json()

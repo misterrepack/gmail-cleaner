@@ -97,9 +97,14 @@ class TestCredentialsFilePrecedence:
 
     @patch("app.services.auth.settings")
     @patch("os.path.exists")
+    @patch(
+        "builtins.open",
+        new_callable=mock_open,
+        read_data='{"type": "installed", "client_id": "test"}',
+    )
     @patch.dict(os.environ, {"GOOGLE_CREDENTIALS": '{"type": "env"}'}, clear=False)
     def test_credentials_file_takes_precedence_over_env(
-        self, mock_exists, mock_settings
+        self, mock_file, mock_exists, mock_settings
     ):
         """Credentials file should take precedence over environment variable."""
         mock_settings.credentials_file = "credentials.json"
@@ -266,11 +271,16 @@ class TestCredentialsTypeMismatch:
 
     @patch("app.services.auth.settings")
     @patch("os.path.exists")
+    @patch(
+        "builtins.open",
+        new_callable=mock_open,
+        read_data='{"type": "installed", "client_id": "test"}',
+    )
     @patch("app.services.auth.InstalledAppFlow")
     @patch("app.services.auth._auth_in_progress", {"active": False})
     @patch("app.services.auth.is_web_auth_mode", return_value=True)
     def test_web_credentials_in_docker_mode(
-        self, mock_web_auth, mock_flow, mock_exists, mock_settings
+        self, mock_web_auth, mock_flow, mock_file, mock_exists, mock_settings
     ):
         """Web application credentials should work in Docker/web auth mode."""
         mock_settings.credentials_file = "credentials.json"
@@ -300,11 +310,16 @@ class TestCredentialsTypeMismatch:
 
     @patch("app.services.auth.settings")
     @patch("os.path.exists")
+    @patch(
+        "builtins.open",
+        new_callable=mock_open,
+        read_data='{"type": "installed", "client_id": "test"}',
+    )
     @patch("app.services.auth.InstalledAppFlow")
     @patch("app.services.auth._auth_in_progress", {"active": False})
     @patch("app.services.auth.is_web_auth_mode", return_value=False)
     def test_desktop_credentials_in_local_mode(
-        self, mock_web_auth, mock_flow, mock_exists, mock_settings
+        self, mock_web_auth, mock_flow, mock_file, mock_exists, mock_settings
     ):
         """Desktop app credentials should work in local mode."""
         mock_settings.credentials_file = "credentials.json"

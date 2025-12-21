@@ -69,11 +69,16 @@ class TestSuccessfulOAuthFlow:
 
     @patch("app.services.auth.settings")
     @patch("os.path.exists")
+    @patch(
+        "builtins.open",
+        new_callable=mock_open,
+        read_data='{"type": "installed", "client_id": "test"}',
+    )
     @patch("app.services.auth.InstalledAppFlow")
     @patch("app.services.auth._auth_in_progress", {"active": False})
     @patch("app.services.auth.is_web_auth_mode", return_value=True)
     def test_oauth_flow_web_auth_mode_binds_to_all_interfaces(
-        self, mock_web_auth, mock_flow, mock_exists, mock_settings
+        self, mock_web_auth, mock_flow, mock_file, mock_exists, mock_settings
     ):
         """OAuth flow in web auth mode should bind to 0.0.0.0."""
         mock_settings.credentials_file = "credentials.json"
@@ -104,11 +109,16 @@ class TestSuccessfulOAuthFlow:
 
     @patch("app.services.auth.settings")
     @patch("os.path.exists")
+    @patch(
+        "builtins.open",
+        new_callable=mock_open,
+        read_data='{"type": "installed", "client_id": "test"}',
+    )
     @patch("app.services.auth.InstalledAppFlow")
     @patch("app.services.auth._auth_in_progress", {"active": False})
     @patch("app.services.auth.is_web_auth_mode", return_value=False)
     def test_oauth_flow_desktop_mode_binds_to_localhost(
-        self, mock_web_auth, mock_flow, mock_exists, mock_settings
+        self, mock_web_auth, mock_flow, mock_file, mock_exists, mock_settings
     ):
         """OAuth flow in desktop mode should bind to localhost."""
         mock_settings.credentials_file = "credentials.json"
@@ -139,11 +149,16 @@ class TestSuccessfulOAuthFlow:
 
     @patch("app.services.auth.settings")
     @patch("os.path.exists")
+    @patch(
+        "builtins.open",
+        new_callable=mock_open,
+        read_data='{"type": "installed", "client_id": "test"}',
+    )
     @patch("app.services.auth.InstalledAppFlow")
     @patch("app.services.auth._auth_in_progress", {"active": False})
     @patch("app.services.auth.is_web_auth_mode", return_value=False)
     def test_oauth_flow_with_custom_oauth_host(
-        self, mock_web_auth, mock_flow, mock_exists, mock_settings
+        self, mock_web_auth, mock_flow, mock_file, mock_exists, mock_settings
     ):
         """OAuth flow should use custom OAUTH_HOST if configured."""
         mock_settings.credentials_file = "credentials.json"

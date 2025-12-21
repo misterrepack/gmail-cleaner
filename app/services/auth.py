@@ -139,6 +139,10 @@ def _get_credentials_path() -> str | None:
                 # Try to parse as JSON to validate
                 json.loads(content)
             return settings.credentials_file
+        except FileNotFoundError:
+            # File was deleted between exists() check and open() - race condition
+            # or test mocking issue - treat as if file doesn't exist
+            return None
         except json.JSONDecodeError as e:
             logger.error(
                 f"Credentials file {settings.credentials_file} contains invalid JSON: {e}",
